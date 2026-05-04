@@ -136,15 +136,41 @@ html, body, #root {
 .Top-Nav {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 15px;
   padding: 10px 20px;
   background: #222;
   border-bottom: 2px solid #00ff00;
-  align-items: center;
-  text-align: center;
   box-shadow: 0 2px 10px rgba(0, 255, 0, 0.2);
   z-index: 100;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1400px; /* Maximum width to prevent stretching on huge screens */
+  gap: 20px;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.nav-error {
+  text-align: center;
+  padding: 5px 0;
+  color: var(--danger);
+  font-family: monospace;
 }
 
 .Top-Nav button {

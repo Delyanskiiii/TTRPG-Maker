@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { DataManager, lg } from '../DataManager';
+import { useState, useCallback, useEffect } from 'react';
+import { DataManager, CharacterSheet, layout, lg } from '../DataManager';
 import { Responsive } from 'react-grid-layout';
 
 // Module-level variable to share lockGrid function between components
@@ -17,8 +17,16 @@ function CharacterViewerNav() {
 
 function CharacterViewer() {
   const dataManager = DataManager.getInstance();
-  const [layout, setLayout] = useState(dataManager.getActiveSystem().sheetStructure);
+  const [layout, setLayout] = useState<layout>(dataManager.getActiveSystem().sheetStructure);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [characters, setCharacters] = useState<CharacterSheet[]>([]);
+
+  useEffect(() => {
+    const fetchCharacters = async () => {
+      setCharacters(await dataManager.loadCharactersForCurrentSystem());
+    };
+    fetchCharacters();
+  }, [dataManager]);
 
   const onLayoutChange = (currentLayout: any, allLayouts: any) => {
     setLayout(allLayouts);
@@ -38,35 +46,60 @@ function CharacterViewer() {
   // Share the function with CharacterViewerNav
   currentLockGrid = lockGrid;
 
+  const createNewCharacter = () => {
+    const sys = dataManager.getActiveSystem();
+    dataManager.setActiveCharacter({
+      type: 'sheet',
+      system: sys.name,
+      name: 'New Character',
+      sheetStructure: sys.sheetStructure
+    });
+  }
+
   return (
     <div className='CharacterViewer'>
-      {/* Navigation controls moved to main nav bar */}
-      <Responsive className="Layout" layouts={layout} width={windowWidth} onLayoutChange={onLayoutChange}>
-        {layout.lg.map((item: lg) => {
-          return (
-            <div key={item.i} className="Box">
-              <div className="Drag-handle">{item.i.toUpperCase()}</div>
-              <div className="Box-content">
-                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {/* {systemCategory.items.map((it) => (
-                    <div key={it.id} style={{ border: '1px solid #444', padding: '10px', textAlign: 'left', width: '100%' }}>
-                      <div style={{ fontWeight: 'bold', fontSize: '1.1em', marginBottom: '4px', borderBottom: '1px solid #333' }}>{it.name}</div>
-                      {it.description && (
-                        <div style={{ fontSize: '0.9em', opacity: 0.8, marginBottom: '8px', fontStyle: 'italic' }}>
-                          {Array.isArray(it.description) ? it.description[0] : it.description}
-                        </div>
-                      )}
-                      {systemCategory.propertyKeys.filter(k => !NON_TIERED_PROPS.includes(k) && k !== 'description').map(prop => (
-                        <PropertyDisplay key={prop} prop={prop} value={(it as any)[prop]} />
-                      ))}
-                    </div>
-                  ))} */}
+      {dataManager.getActiveCharacter() ? (
+        <Responsive className="Layout" layouts={layout} width={windowWidth} onLayoutChange={onLayoutChange}>
+          {layout.lg.map((item: lg) => {
+            return (
+              <div key={item.i} className="Box">
+                <div className="Drag-handle">{item.i.toUpperCase()}</div>
+                <div className="Box-content">
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* {systemCategory.items.map((it) => (
+                      <div key={it.id} style={{ border: '1px solid #444', padding: '10px', textAlign: 'left', width: '100%' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '1.1em', marginBottom: '4px', borderBottom: '1px solid #333' }}>{it.name}</div>
+                        {it.description && (
+                          <div style={{ fontSize: '0.9em', opacity: 0.8, marginBottom: '8px', fontStyle: 'italic' }}>
+                            {Array.isArray(it.description) ? it.description[0] : it.description}
+                          </div>
+                        )}
+                        {systemCategory.propertyKeys.filter(k => !NON_TIERED_PROPS.includes(k) && k !== 'description').map(prop => (
+                          <PropertyDisplay key={prop} prop={prop} value={(it as any)[prop]} />
+                        ))}
+                      </div>
+                    ))} */}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </Responsive>
+            );
+          })}
+        </Responsive>
+      ) : (
+        <div className="page-content">
+          <h1>Select Your Character</h1>
+          <div className="grid-row">
+            {characters.map(char => (
+              <button key={char.name} className="char-button" onClick={() => dataManager.setActiveCharacter(char)}>
+                {char.name}
+              </button>
+            ))}
+            <button onClick={createNewCharacter} className="char-button new">
+              + NEW CHARACTER
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

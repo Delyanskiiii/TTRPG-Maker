@@ -121,7 +121,7 @@ server.post('/api/system', async (req, res) => {
 server.get('/api/system/current', async (req, res) => {
   try {
     const system = await getCurrentSystem()
-    res.json({ currentSystemName: getCurrentSystemName(), system })
+    res.json(system)
   } catch (err) {
     res.status(500).json({ error: 'Unable to load current system' })
   }

@@ -482,28 +482,10 @@ function PropertyField({ propKey, value, onChange, globalTags = [], categories =
 
 // --- Main Component ---
 
-function Refactor({ 
-  characters, 
-  loadSheet, 
-  categories, 
-  setCategories, 
-  globalTags, 
-  setGlobalTags,
-  normalizeItem,
-  lockGrid,
-  loadDefaultSheet
-}: { 
-  characters: any[], 
-  loadSheet: (character: any) => void,
-  categories: Category[],
-  setCategories: React.Dispatch<React.SetStateAction<Category[]>>,
-  globalTags: string[],
-  setGlobalTags: React.Dispatch<React.SetStateAction<string[]>>,
-  normalizeItem: (item: Partial<Item>, propertyKeys: string[]) => Item,
-  lockGrid: () => void,
-  loadDefaultSheet: () => void
-}) {
+function Refactor() {
   const hostname = window.location.hostname;
+  const [globalTags, setGlobalTags] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const addCategory = () => {
     const existingNames = categories.map(c => c.name.trim());
@@ -565,6 +547,46 @@ function Refactor({
     return next;
   });
 
+  const normalizeItem = useCallback((item: Partial<Item>, propertyKeys: string[]): Item => {
+    const normalized: any = { id: item.id || Date.now() };
+    const mTier = item.maxTier ?? 1;
+
+    propertyKeys.forEach((key) => {
+      const type = getPropertyType(key);
+      const val = (item as any)[key];
+      const isArrType = ARRAY_TYPES.includes(type);
+
+      if (NON_TIERED_PROPS.includes(key)) {
+        normalized[key] = val ?? getDefaultValue(type);
+      } else if (mTier >= 2) {
+        let arr: any[];
+        if (Array.isArray(val)) {
+          if (isArrType) {
+            if (val.length > 0 && Array.isArray(val[0])) arr = [...val];
+            else arr = [val];
+          } else {
+            arr = [...val];
+          }
+        } else {
+          arr = [val ?? getDefaultValue(type)];
+        }
+        while (arr.length < mTier) arr.push(getDefaultValue(type));
+        normalized[key] = arr.slice(0, mTier);
+      } else {
+        if (Array.isArray(val)) {
+          if (isArrType) {
+            normalized[key] = (val.length > 0 && Array.isArray(val[0])) ? val[0] : val;
+          } else {
+            normalized[key] = val[0];
+          }
+        } else {
+          normalized[key] = val ?? getDefaultValue(type);
+        }
+      }
+    });
+    return normalized as Item;
+  }, []);
+
   const addItem = (catIdx: number) => updateCategory(catIdx, { 
     items: [...categories[catIdx].items, normalizeItem({ name: 'New Item' }, getCategoryKeys(categories[catIdx]))] 
   });
@@ -577,8 +599,6 @@ function Refactor({
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '10px', background: '#333', position: 'sticky', top: 0, zIndex: 10, display: 'flex', gap: '10px' }}>
         <button onClick={addCategory}>Add Category</button>
-        <button onClick={loadDefaultSheet}>Load Default Sheet</button>
-        <button onClick={lockGrid}>Lock/Unlock Grid</button>
       </div>
       <div style={{ padding: '20px' }}>
       <TagManager tags={globalTags} onTagsChange={setGlobalTags} />
