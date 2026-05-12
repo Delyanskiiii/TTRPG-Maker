@@ -2,24 +2,43 @@ import { useState, useCallback, useEffect } from 'react';
 import { DataManager, CharacterSheet, layout, lg } from '../DataManager';
 import { Responsive } from 'react-grid-layout';
 
-// Module-level variable to share lockGrid function between components
-let currentLockGrid: (() => void) | null = null;
-
-function CharacterViewerNav() {
+function CharacterViewerNav({ layout, setLayout, activeCharacter }: { layout: layout; setLayout: React.Dispatch<React.SetStateAction<layout>>; activeCharacter: CharacterSheet | null }) {
+  const dataManager = DataManager.getInstance();
+  const lockGrid = useCallback(() => {
+    setLayout({
+      ...layout,
+      lg: layout.lg.map(item => ({
+        ...item,
+        isDraggable: !item.isDraggable,
+        isResizable: !item.isResizable,
+      }))
+    });
+  }, [layout, setLayout]);
+  
   return (
-    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-      <button onClick={() => currentLockGrid?.()} className="button small" style={{ cursor: 'pointer' }}>
-        🔒 Lock/Unlock Grid
-      </button>
-    </div>
+    <>
+    {activeCharacter &&
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <button onClick={() => lockGrid()} className="button small" style={{ cursor: 'pointer' }}>
+          🔒 Lock/Unlock Grid
+        </button>
+        <button className="button small" onClick={async () => {await dataManager.saveCharacter(activeCharacter);}} title="Save character">💾</button>
+      </div>
+    }
+    </>
   );
 }
 
-function CharacterViewer() {
+function CharacterViewer({ layout, setLayout, activeCharacter, setActiveCharacter }: { layout: layout; setLayout: React.Dispatch<React.SetStateAction<layout>>; activeCharacter: CharacterSheet | null; setActiveCharacter: React.Dispatch<React.SetStateAction<CharacterSheet | null>> }) {
   const dataManager = DataManager.getInstance();
-  const [layout, setLayout] = useState<layout>(dataManager.getActiveSystem().sheetStructure);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [characters, setCharacters] = useState<CharacterSheet[]>([]);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchCharacters = async () => {
@@ -32,23 +51,9 @@ function CharacterViewer() {
     setLayout(allLayouts);
   };
 
-  const lockGrid = useCallback(() => {
-    setLayout({
-      ...layout,
-      lg: layout.lg.map(item => ({
-        ...item,
-        isDraggable: !item.isDraggable,
-        isResizable: !item.isDraggable,
-      }))
-    });
-  }, [layout]);
-
-  // Share the function with CharacterViewerNav
-  currentLockGrid = lockGrid;
-
   const createNewCharacter = () => {
     const sys = dataManager.getActiveSystem();
-    dataManager.setActiveCharacter({
+    setActiveCharacter({
       type: 'sheet',
       system: sys.name,
       name: 'New Character',
@@ -58,7 +63,7 @@ function CharacterViewer() {
 
   return (
     <div className='CharacterViewer'>
-      {dataManager.getActiveCharacter() ? (
+      {activeCharacter ? (
         <Responsive className="Layout" layouts={layout} width={windowWidth} onLayoutChange={onLayoutChange}>
           {layout.lg.map((item: lg) => {
             return (
@@ -90,7 +95,7 @@ function CharacterViewer() {
           <h1>Select Your Character</h1>
           <div className="grid-row">
             {characters.map(char => (
-              <button key={char.name} className="char-button" onClick={() => dataManager.setActiveCharacter(char)}>
+              <button key={char.name} className="char-button" onClick={() => setActiveCharacter(char)}>
                 {char.name}
               </button>
             ))}

@@ -197,9 +197,9 @@ export class DataManager {
     return this.systemsCache;
   }
 
-  public async saveSystem(): Promise<void> {
+  public async saveSystem(system: GameSystem): Promise<void> {
     try {
-      await this.saveSystemToServer();
+      await this.saveSystemToServer(system);
     } catch (error) {
       this.errors.push(`Error saving system: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -308,13 +308,12 @@ export class DataManager {
     }
   }
 
-  private async saveSystemToServer(): Promise<void> {
+  private async saveSystemToServer(system: GameSystem): Promise<void> {
     try {
-      if (this.activeSystem == null) throw new Error('No active system set in DataManager')
       const res = await fetch('/api/system', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.activeSystem)
+        body: JSON.stringify(system)
       })
       if (!res.ok) throw new Error('Failed to save system')
     } catch (error) {

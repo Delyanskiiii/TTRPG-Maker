@@ -1,6 +1,28 @@
-import { useState, useCallback } from 'react';
-import { DataManager, lg } from '../DataManager';
+import { useState, useCallback, act } from 'react';
+import { DataManager, GameSystem, lg } from '../DataManager';
 import { Responsive } from 'react-grid-layout';
+
+function SheetMakerNav({ activeSystem, setActiveSystem }: { activeSystem: GameSystem; setActiveSystem: React.Dispatch<React.SetStateAction<GameSystem>>}) {
+  const dataManager = DataManager.getInstance();
+  const [availableSystems, setAvailableSystems] = useState<GameSystem[]>([activeSystem]);
+
+  return (
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+      <select className="system-input" value={activeSystem.name} onChange={(e) => {
+        const selected = availableSystems.find(sys => sys.name === e.target.value);
+        if (selected) {
+          setActiveSystem(selected);
+        }
+      }}>
+        {availableSystems.map(sys => (
+          <option key={sys.name} value={sys.name}>{sys.name}</option>
+        ))}
+      </select>
+      <button className="button small" onClick={async () => {setAvailableSystems((await dataManager.loadAllSystems()).concat(dataManager.getMockSystem()));}} title="Load Systems">📂</button>
+      <button className="button small" onClick={async () => {await dataManager.saveSystem(activeSystem);}} title="Save System">💾</button>
+    </div>
+  );
+}
 
 function SheetMaker() {
   const dataManager = DataManager.getInstance();
@@ -45,3 +67,4 @@ function SheetMaker() {
 };
 
 export default SheetMaker;
+export { SheetMakerNav };
