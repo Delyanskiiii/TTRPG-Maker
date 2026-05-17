@@ -2,21 +2,30 @@ import { useState, useCallback, useEffect } from 'react';
 import { DataManager, CharacterSheet, layout, lg } from '../DataManager';
 import { Responsive } from 'react-grid-layout';
 
-function CharacterViewerNav({ layout, setLayout, activeCharacter }: { layout: layout; setLayout: React.Dispatch<React.SetStateAction<layout>>; activeCharacter: CharacterSheet | null }) {
+function CharacterViewerNav({ activeCharacter, setActiveCharacter, availableCharacters, setAvailableCharacters }: { activeCharacter: CharacterSheet | null; setActiveCharacter: React.Dispatch<React.SetStateAction<CharacterSheet | null>>; availableCharacters: CharacterSheet[]; setAvailableCharacters: React.Dispatch<React.SetStateAction<CharacterSheet[]>> }) {
   const dataManager = DataManager.getInstance();
+
   const lockGrid = useCallback(() => {
-    setLayout({
-      ...layout,
-      lg: layout.lg.map(item => ({
-        ...item,
-        isDraggable: !item.isDraggable,
-        isResizable: !item.isResizable,
-      }))
+    if (!activeCharacter) return;
+    setActiveCharacter({
+      ...activeCharacter,
+      sheetStructure: {
+        ...activeCharacter.sheetStructure,
+        lg: activeCharacter.sheetStructure.lg.map(item => ({
+          ...item,
+          isDraggable: !item.isDraggable,
+          isResizable: !item.isResizable,
+        }))
+      }
     });
-  }, [layout, setLayout]);
-  
+  }, [activeCharacter, setActiveCharacter]);
+
   return (
     <>
+    <div className={`page-panel${activeCharacter ? '' : ' hidden'}`}>
+      <button className="button small" onClick={() => setActiveCharacter(null)} title="Back to character list">🔙</button>
+    </div>
+    <button className="button small" onClick={async () => {setAvailableCharacters(await dataManager.loadCharactersForCurrentSystem())}} title="Load Characters">📂</button>
     {activeCharacter &&
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         <button onClick={() => lockGrid()} className="button small" style={{ cursor: 'pointer' }}>
@@ -29,10 +38,9 @@ function CharacterViewerNav({ layout, setLayout, activeCharacter }: { layout: la
   );
 }
 
-function CharacterViewer({ layout, setLayout, activeCharacter, setActiveCharacter }: { layout: layout; setLayout: React.Dispatch<React.SetStateAction<layout>>; activeCharacter: CharacterSheet | null; setActiveCharacter: React.Dispatch<React.SetStateAction<CharacterSheet | null>> }) {
+function CharacterViewer({ activeCharacter, setActiveCharacter, availableCharacters, setAvailableCharacters }: { activeCharacter: CharacterSheet | null; setActiveCharacter: React.Dispatch<React.SetStateAction<CharacterSheet | null>>; availableCharacters: CharacterSheet[]; setAvailableCharacters: React.Dispatch<React.SetStateAction<CharacterSheet[]>> }) {
   const dataManager = DataManager.getInstance();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const [characters, setCharacters] = useState<CharacterSheet[]>([]);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -42,13 +50,15 @@ function CharacterViewer({ layout, setLayout, activeCharacter, setActiveCharacte
 
   useEffect(() => {
     const fetchCharacters = async () => {
-      setCharacters(await dataManager.loadCharactersForCurrentSystem());
+      setAvailableCharacters(await dataManager.loadCharactersForCurrentSystem());
     };
     fetchCharacters();
   }, [dataManager]);
 
   const onLayoutChange = (currentLayout: any, allLayouts: any) => {
-    setLayout(allLayouts);
+    if (activeCharacter) {
+      setActiveCharacter({ ...activeCharacter, sheetStructure: allLayouts });
+    }
   };
 
   const createNewCharacter = () => {
@@ -64,8 +74,8 @@ function CharacterViewer({ layout, setLayout, activeCharacter, setActiveCharacte
   return (
     <div className='CharacterViewer'>
       {activeCharacter ? (
-        <Responsive className="Layout" layouts={layout} width={windowWidth} onLayoutChange={onLayoutChange}>
-          {layout.lg.map((item: lg) => {
+        <Responsive className="Layout" layouts={activeCharacter.sheetStructure} width={windowWidth} onLayoutChange={onLayoutChange}>
+          {activeCharacter.sheetStructure.lg.map((item: lg) => {
             return (
               <div key={item.i} className="Box">
                 <div className="Drag-handle">{item.i.toUpperCase()}</div>
@@ -94,7 +104,7 @@ function CharacterViewer({ layout, setLayout, activeCharacter, setActiveCharacte
         <div className="page-content">
           <h1>Select Your Character</h1>
           <div className="grid-row">
-            {characters.map(char => (
+            {availableCharacters.map(char => (
               <button key={char.name} className="char-button" onClick={() => setActiveCharacter(char)}>
                 {char.name}
               </button>

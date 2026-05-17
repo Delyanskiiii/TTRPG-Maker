@@ -3,5 +3,19 @@
   "name": "Fallout3",
   "categories": [],
   "tags": [],
-  "sheetStructure": []
+  "sheetStructure": {
+    "lg": [
+      {
+        "i": "Sample Window",
+        "x": 7,
+        "y": 0,
+        "w": 1,
+        "h": 1,
+        "moved": false,
+        "static": false,
+        "isDraggable": true,
+        "isResizable": true
+      }
+    ]
+  }
 }

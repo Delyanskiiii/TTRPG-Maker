@@ -35,7 +35,7 @@ function writeJsonFile(filePath, data) {
   })
 }
 
-let currentSystemName = null
+let currentSystemName = 'MockSystem'
 
 function setCurrentSystem(name) {
   currentSystemName = name ? String(name) : null
@@ -69,14 +69,14 @@ async function getAllSystems() {
 
 async function getCurrentSystem() {
   if (!currentSystemName) return null
-  const targetName = String(currentSystemName || '').toLowerCase()
+  const targetName = String(currentSystemName || '')
   const systems = await getAllSystems()
-  return systems.find(system => String(system.name || '').toLowerCase() === targetName) || null
+  return systems.find(system => String(system.name || '') === targetName) || null
 }
 
 async function getCharactersForCurrentSystem() {
   if (!currentSystemName) return []
-  const targetName = String(currentSystemName || '').toLowerCase()
+  const targetName = String(currentSystemName)
   const files = await getDataFilePaths()
   const items = await Promise.all(files.map(async file => {
     try {
@@ -85,9 +85,8 @@ async function getCharactersForCurrentSystem() {
       return null
     }
   }))
-
   return items.filter(Boolean).filter(item =>
-    item.type === 'character' && String(item.system || '').toLowerCase() === targetName
+    item.type === 'character' && String(item.system || '') === targetName
   )
 }
 

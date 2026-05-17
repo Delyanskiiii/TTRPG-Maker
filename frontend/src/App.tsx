@@ -15,7 +15,23 @@ function App() {
   // Nav states
   const [layout, setLayout] = useState<layout>(dataManager.getActiveSystem().sheetStructure);
   const [activeCharacter, setActiveCharacter] = useState<CharacterSheet | null>(null);
+  const [availableCharacters, setAvailableCharacters] = useState<CharacterSheet[]>([]);
   const [activeSystem, setActiveSystem] = useState<GameSystem>(dataManager.getMockSystem());
+
+  // useEffect(() => {
+  //   console.log('Active system changed:', activeSystem);
+  //   if (activeSystem) {
+  //     // setActiveCharacter(null);
+  //     // setAvailableCharacters([]);
+  //   }
+  //   console.log(dataManager.getActiveSystem());
+  // }, [activeCharacter, availableCharacters, activeSystem]);
+
+  useEffect(() => {
+    setActiveCharacter(null);
+    setAvailableCharacters([]);
+  }, [activeSystem]);
+
 
   return (
     <div className="App">
@@ -23,13 +39,25 @@ function App() {
         {dataManager.isLocalhost() && (
           <div className="nav-container">
             <div className="nav-left">
+
               <button className={`button${view === 'system' ? ' active' : ''}`} onClick={() => setView('system')}>System Maker</button>
+              
               <button className={`button${view === 'sheet' ? ' active' : ''}`} onClick={() => setView('sheet')}>Sheet Maker</button>
+              
               <button className={`button${view === 'character' ? ' active' : ''}`} onClick={() => setView('character')}>Character View</button>
+            
             </div>
+
             <div className="nav-right">
-              {view === 'character' && <CharacterViewerNav layout={layout} setLayout={setLayout} activeCharacter={activeCharacter} />}
-              {(view === 'sheet' || view === 'system') && <SheetMakerNav activeSystem={activeSystem} setActiveSystem={setActiveSystem} />}
+
+              <div className={`page-panel${view === 'character' ? '' : ' hidden'}`}>
+                <CharacterViewerNav activeCharacter={activeCharacter} setActiveCharacter={setActiveCharacter} availableCharacters={availableCharacters} setAvailableCharacters={setAvailableCharacters} />
+              </div>
+
+              <div className={`page-panel${(view === 'system' || view === 'sheet') ? '' : ' hidden'}`}>
+                <SheetMakerNav activeSystem={activeSystem} setActiveSystem={setActiveSystem} />
+              </div>
+
             </div>
           </div>
         )}
@@ -43,11 +71,11 @@ function App() {
         </div>
 
         <div className={`page-panel${view === 'sheet' ? '' : ' hidden'}`}>
-          <SheetMaker/>
+          <SheetMaker layout={layout} setLayout={setLayout} />
         </div>
 
         <div className={`page-panel${view === 'character' ? '' : ' hidden'}`}>
-          <CharacterViewer layout={layout} setLayout={setLayout} activeCharacter={activeCharacter} setActiveCharacter={setActiveCharacter} />
+          <CharacterViewer activeCharacter={activeCharacter} setActiveCharacter={setActiveCharacter} availableCharacters={availableCharacters} setAvailableCharacters={setAvailableCharacters} />
         </div>
 
       </main>

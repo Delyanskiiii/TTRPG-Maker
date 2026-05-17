@@ -1,5 +1,5 @@
 import { useState, useCallback, act } from 'react';
-import { DataManager, GameSystem, lg } from '../DataManager';
+import { DataManager, GameSystem, lg, layout } from '../DataManager';
 import { Responsive } from 'react-grid-layout';
 
 function SheetMakerNav({ activeSystem, setActiveSystem }: { activeSystem: GameSystem; setActiveSystem: React.Dispatch<React.SetStateAction<GameSystem>>}) {
@@ -12,6 +12,7 @@ function SheetMakerNav({ activeSystem, setActiveSystem }: { activeSystem: GameSy
         const selected = availableSystems.find(sys => sys.name === e.target.value);
         if (selected) {
           setActiveSystem(selected);
+          dataManager.setActiveSystem(selected);
         }
       }}>
         {availableSystems.map(sys => (
@@ -24,9 +25,7 @@ function SheetMakerNav({ activeSystem, setActiveSystem }: { activeSystem: GameSy
   );
 }
 
-function SheetMaker() {
-  const dataManager = DataManager.getInstance();
-  const [layout, setLayout] = useState(dataManager.getActiveSystem().sheetStructure);
+function SheetMaker({layout, setLayout}: {layout: any; setLayout: React.Dispatch<React.SetStateAction<layout>>}) {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const onLayoutChange = (currentLayout: any, allLayouts: any) => {

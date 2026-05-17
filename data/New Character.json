@@ -1,13 +1,12 @@
 {
-  "type": "system",
-  "name": "Fallout2",
-  "categories": [],
-  "tags": [],
+  "type": "character",
+  "system": "Fallout3",
+  "name": "New Character",
   "sheetStructure": {
     "lg": [
       {
         "i": "Sample Window",
-        "x": 7,
+        "x": 1,
         "y": 0,
         "w": 1,
         "h": 1,

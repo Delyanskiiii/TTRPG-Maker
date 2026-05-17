@@ -184,13 +184,13 @@ export const PropertyDisplay = ({ prop, value }: { prop: string; value: any }) =
 
 // --- Sub-Components ---
 
-const TagManager = ({ tags, onTagsChange }: { tags: string[], onTagsChange: (tags: string[]) => void }) => {
+const TagManager = ({ tags, setTags }: { tags: string[]; setTags: React.Dispatch<React.SetStateAction<string[]>> }) => {
   const [inputValue, setInputValue] = useState('');
 
   const handleAdd = () => {
     const trimmed = inputValue.trim();
     if (trimmed && !tags.includes(trimmed)) {
-      onTagsChange([...tags, trimmed]);
+      setTags([...tags, trimmed]);
       setInputValue('');
     }
   };
@@ -213,7 +213,7 @@ const TagManager = ({ tags, onTagsChange }: { tags: string[], onTagsChange: (tag
         {tags.map((tag) => (
           <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', backgroundColor: '#e0e0e0', borderRadius: '16px', fontSize: '14px' }}>
             {tag}
-            <button onClick={() => onTagsChange(tags.filter((t) => t !== tag))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: 'bold', color: '#666', padding: '0 2px' }}>×</button>
+            <button onClick={() => setTags(tags.filter((t) => t !== tag))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: 'bold', color: '#666', padding: '0 2px' }}>×</button>
           </div>
         ))}
       </div>
@@ -601,7 +601,7 @@ function Refactor() {
         <button onClick={addCategory}>Add Category</button>
       </div>
       <div style={{ padding: '20px' }}>
-      <TagManager tags={globalTags} onTagsChange={setGlobalTags} />
+      <TagManager tags={globalTags} setTags={setGlobalTags} />
       <h2>DM Category Manager</h2>
       {categories.map((cat, ci) => {
         const isDuplicate = categories.some((c, i) => i !== ci && c.name.trim() === cat.name.trim() && cat.name.trim() !== "");
