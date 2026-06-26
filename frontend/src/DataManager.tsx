@@ -29,6 +29,8 @@ export interface Calculation {
   formula: string;
 }
 
+export const PropertyTypes = ['number', 'string', 'categorySelection', 'itemSelection', 'propertySelection', 'diceSelection', 'uses', 'calculation'];
+
 export interface Property {
   name: string;
   value: number | number[] | string | string[] | CategorySelection | CategorySelection[] | ItemSelection | ItemSelection[] | PropertySelection | PropertySelection[]| DiceSelection | DiceSelection[] | Uses | Calculation;

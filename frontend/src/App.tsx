@@ -67,7 +67,7 @@ function App() {
       <main className="View-Container">
 
         <div className={`page-panel${view === 'system' ? '' : ' hidden'}`}>
-          <Refactor/>
+          <Refactor system={activeSystem} setSystem={setActiveSystem} />
         </div>
 
         <div className={`page-panel${view === 'sheet' ? '' : ' hidden'}`}>

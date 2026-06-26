@@ -1,0 +1,32 @@
+{
+  "type": "system",
+  "name": "MockSystem",
+  "categories": [
+    {
+      "name": "New Category",
+      "propertyKeys": [
+        "name",
+        "shoa"
+      ],
+      "items": [],
+      "showProps": true,
+      "minimized": false
+    }
+  ],
+  "tags": [],
+  "sheetStructure": {
+    "lg": [
+      {
+        "i": "Sample Window",
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1,
+        "moved": false,
+        "static": false,
+        "isDraggable": true,
+        "isResizable": true
+      }
+    ]
+  }
+}

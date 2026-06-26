@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Property, PropertyTypes, GameSystem, Category as CategoryType, Item as ItemType, Property as PropertyTypeType } from '../DataManager';
 
 // --- Types & Constants ---
 
@@ -131,7 +132,7 @@ export const getDefaultValue = (type: PropertyType) => {
   }
 };
 
-export const getCategoryKeys = (cat: Category) => (cat.propertyKeys?.length > 0 ? cat.propertyKeys : ['name']);
+export const getCategoryKeys = (category: CategoryType) => (category.propertyKeys?.length > 0 ? category.propertyKeys : ['name']);
 
 export const PropertyDisplay = ({ prop, value }: { prop: string; value: any }) => {
   const type = getPropertyType(prop);
@@ -221,7 +222,55 @@ const TagManager = ({ tags, setTags }: { tags: string[]; setTags: React.Dispatch
   );
 };
 
-function ObjectArrayEditor({ type, value, onChange, categories = [], globalTags = [] }: { type: PropertyType, value: any[], onChange: (val: any[]) => void, categories?: Category[], globalTags?: string[] }) {
+const PropertyManager = ({ properties, setProperties }: { properties: Property[]; setProperties: React.Dispatch<React.SetStateAction<Property[]>> }) => {
+  const [inputName, setInputName] = useState('');
+  const [inputValue, setInputValue] = useState(PropertyTypes[0]);
+
+  const handleAdd = () => {
+    const trimmed = inputName.trim();
+    if (trimmed && !properties.some((p) => p.name === trimmed)) {
+      setProperties([...properties, { name: trimmed, value : inputValue }]);
+      setInputName('');
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #aaa', borderRadius: '4px', background: '#fcfcfc' }}>
+      <h3 style={{ marginTop: 0 }}>Global Property Manager</h3>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+        <input
+          type="text"
+          value={inputName}
+          onChange={(e) => setInputName(e.target.value)}
+          placeholder="Enter property name..."
+          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+          style={{ flex: 1, padding: '5px' }}
+        />
+        <select
+          value={inputValue}
+          onChange={(e) => {
+            const newType = e.target.value as PropertyType;
+            setInputValue(newType);
+          }}
+          style={{ padding: '2px', borderRadius: '4px', border: '1px solid #ccc' }}
+        >
+          {PropertyTypes.map((type) => (<option key={type} value={type}>{type}</option>))}
+        </select>
+        <button onClick={handleAdd}>Add Property</button>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {properties.map((property) => (
+          <div key={property.name} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', backgroundColor: '#e0e0e0', borderRadius: '16px', fontSize: '14px' }}>
+            {property.name + ': ' + property.value.toString()}
+            <button onClick={() => setProperties(properties.filter((p) => p.name !== property.name))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: 'bold', color: '#666', padding: '0 2px' }}>×</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+function ObjectArrayEditor({ type, value, onChange, categories = [], globalTags = [], globalProperties = [] }: { type: PropertyType, value: any[], onChange: (val: any[]) => void, categories?: Category[], globalTags?: string[], globalProperties?: Property[] }) {
   const addItem = (customDefault?: any) => {
     if (customDefault) {
       onChange([...value, customDefault]);
@@ -254,7 +303,7 @@ function ObjectArrayEditor({ type, value, onChange, categories = [], globalTags 
                 onChange(next);
               }}>
                 <option value="">Select Category</option>
-                {categories.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
+                {categories.map(category => <option key={category.name} value={category.name}>{category.name}</option>)}
               </select>
               
               <select value={obj.itemName} onChange={e => {
@@ -298,7 +347,7 @@ function ObjectArrayEditor({ type, value, onChange, categories = [], globalTags 
                 onChange(next);
               }}>
                 <option value="">Select Category</option>
-                {categories.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
+                {categories.map(category => <option key={category.name} value={category.name}>{category.name}</option>)}
               </select>
               
               <select value={obj.itemName} onChange={e => {
@@ -352,7 +401,7 @@ function ObjectArrayEditor({ type, value, onChange, categories = [], globalTags 
                     onChange(next);
                   }}>
                     <option value="">Select Category</option>
-                    {categories.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
+                    {categories.map(category => <option key={category.name} value={category.name}>{category.name}</option>)}
                   </select>
 
                   {obj.type === 'item' && (
@@ -482,70 +531,68 @@ function PropertyField({ propKey, value, onChange, globalTags = [], categories =
 
 // --- Main Component ---
 
-function Refactor() {
+function Refactor({ system, setSystem }: { system: GameSystem; setSystem: React.Dispatch<React.SetStateAction<GameSystem>> }) {
   const hostname = window.location.hostname;
   const [globalTags, setGlobalTags] = useState<string[]>([]);
+  const [globalProperties, setGlobalProperties] = useState<Property[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedPropertyToAdd, setSelectedPropertyToAdd] = useState<Record<number, string>>({});
 
   const addCategory = () => {
-    const existingNames = categories.map(c => c.name.trim());
+    const existingNames = system.categories.map(c => c.name.trim());
     let newName = "New Category";
     let i = 1;
     while (existingNames.includes(newName)) {
       newName = `New Category ${i++}`;
     }
-    setCategories([...categories, { name: newName, items: [], propertyKeys: ['name'], showProps: false }]);
+    setSystem({ ...system, categories: [...system.categories, { name: newName, propertyKeys: ['name'], items: [], showProps: true, minimized: false }] });
   };
 
   const removeCategory = (idx: number) => setCategories(prev => prev.filter((_, i) => i !== idx));
-  const updateCategory = (idx: number, patch: Partial<Category>) => setCategories(prev => {
-    const next = [...prev];
-    next[idx] = { ...next[idx], ...patch };
-    return next;
-  });
+  const updateCategory = (idx: number, patch: Partial<CategoryType>) => setSystem({ ...system, categories: system.categories.map((category, i) => i === idx ? { ...category, ...patch } : category) });
 
-  const toggleCategoryProperty = (catIdx: number, key: string) => {
-    const cat = categories[catIdx];
-    const keys = getCategoryKeys(cat);
-    const nextKeys = keys.includes(key) ? keys.filter(k => k !== key) : [...keys, key];
-    const finalKeys = Array.from(new Set([...nextKeys, 'name']));
-    updateCategory(catIdx, { propertyKeys: finalKeys, items: cat.items.map(it => normalizeItem(it, finalKeys)) });
-  };
+  // const toggleCategoryProperty = (catIdx: number, key: string) => {
+  //   const category = categories[catIdx];
+  //   const keys = getCategoryKeys(category);
+  //   const nextKeys = keys.includes(key) ? keys.filter(k => k !== key) : [...keys, key];
+  //   const finalKeys = Array.from(new Set([...nextKeys, 'name']));
+  //   // updateCategory(catIdx, { propertyKeys: finalKeys, items: category.items.map(it => normalizeItem(it, finalKeys)) });
+  // };
 
-  const setItem = (catIdx: number, itemIdx: number, patch: Partial<Item>) => setCategories(prev => {
-    const next = [...prev];
-    const cat = next[catIdx];
-    const keys = getCategoryKeys(cat);
-    let item = { ...cat.items[itemIdx] };
+  // const setItem = (catIdx: number, itemIdx: number, patch: Partial<Item>) => setCategories(prev => {
+  //   const next = [...prev];
+  //   const category = next[catIdx];
+  //   const keys = getCategoryKeys(category);
+  //   let item = { ...category.items[itemIdx] };
 
-    // Migration logic for tiers
-    if ('maxTier' in patch) {
-      const newMaxTier = patch.maxTier ?? 1;
-      const oldMaxTier = item.maxTier ?? 1;
+  //   // Migration logic for tiers
+  //   if ('maxTier' in patch) {
+  //     const newMaxTier = patch.maxTier ?? 1;
+  //     const oldMaxTier = item.maxTier ?? 1;
 
-      if (newMaxTier !== oldMaxTier) {
-        keys.forEach(prop => {
-          if (NON_TIERED_PROPS.includes(prop)) return;
-          const val = (item as any)[prop];
-          const type = getPropertyType(prop);
+  //     if (newMaxTier !== oldMaxTier) {
+  //       keys.forEach(prop => {
+  //         if (NON_TIERED_PROPS.includes(prop)) return;
+  //         const val = (item as any)[prop];
+  //         const type = getPropertyType(prop);
 
-          if (newMaxTier >= 2) {
-            let newArr = Array.isArray(val) && oldMaxTier >= 2 ? [...val] : [val ?? getDefaultValue(type)];
-            while (newArr.length < newMaxTier) newArr.push(getDefaultValue(type));
-            (item as any)[prop] = newArr.slice(0, newMaxTier);
-          } else if (oldMaxTier >= 2 && Array.isArray(val)) {
-            (item as any)[prop] = val[0];
-          }
-        });
-      }
-    }
+  //         if (newMaxTier >= 2) {
+  //           let newArr = Array.isArray(val) && oldMaxTier >= 2 ? [...val] : [val ?? getDefaultValue(type)];
+  //           while (newArr.length < newMaxTier) newArr.push(getDefaultValue(type));
+  //           (item as any)[prop] = newArr.slice(0, newMaxTier);
+  //         } else if (oldMaxTier >= 2 && Array.isArray(val)) {
+  //           (item as any)[prop] = val[0];
+  //         }
+  //       });
+  //     }
+  //   }
 
-    const updatedItem = { ...item, ...patch };
-    const items = [...next[catIdx].items];
-    items[itemIdx] = updatedItem as Item;
-    next[catIdx] = { ...next[catIdx], items };
-    return next;
-  });
+  //   const updatedItem = { ...item, ...patch };
+  //   const items = [...next[catIdx].items];
+  //   items[itemIdx] = updatedItem as Item;
+  //   next[catIdx] = { ...next[catIdx], items };
+  //   return next;
+  // });
 
   const normalizeItem = useCallback((item: Partial<Item>, propertyKeys: string[]): Item => {
     const normalized: any = { id: item.id || Date.now() };
@@ -588,11 +635,11 @@ function Refactor() {
   }, []);
 
   const addItem = (catIdx: number) => updateCategory(catIdx, { 
-    items: [...categories[catIdx].items, normalizeItem({ name: 'New Item' }, getCategoryKeys(categories[catIdx]))] 
+    // items: [...categories[catIdx].items, normalizeItem({ name: 'New Item' }, getCategoryKeys(categories[catIdx]))] 
   });
 
   const removeItem = (catIdx: number, itemIdx: number) => updateCategory(catIdx, { 
-    items: categories[catIdx].items.filter((_, i) => i !== itemIdx) 
+    // items: categories[catIdx].items.filter((_, i) => i !== itemIdx) 
   });
 
   const renderDMTools = () => (
@@ -602,63 +649,68 @@ function Refactor() {
       </div>
       <div style={{ padding: '20px' }}>
       <TagManager tags={globalTags} setTags={setGlobalTags} />
-      <h2>DM Category Manager</h2>
-      {categories.map((cat, ci) => {
-        const isDuplicate = categories.some((c, i) => i !== ci && c.name.trim() === cat.name.trim() && cat.name.trim() !== "");
+      <PropertyManager properties={globalProperties} setProperties={setGlobalProperties} />
+
+
+
+      <h2>DM Category Manager 2</h2>
+
+
+
+      {system.categories.map((category, categoryIndex) => {
+        const isDuplicate = system.categories.some((c, i) => i !== categoryIndex && c.name.trim() === category.name.trim() && category.name.trim() !== "");
         return (
-          <div key={ci} style={{ marginBottom: '15px', padding: '5px', border: '1px dashed #ccc' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button 
-                onClick={() => updateCategory(ci, { minimized: !cat.minimized })}
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.1em', padding: '0 5px' }}
-                title={cat.minimized ? "Expand Category" : "Minimize Category"}
-              >
-                {cat.minimized ? '▶' : '▼'}
-              </button>
-              <input 
-                placeholder="Category name" 
-                value={cat.name} 
-                onChange={(e) => updateCategory(ci, { name: e.target.value })} 
-                style={{ flex: 1, borderColor: isDuplicate ? 'red' : undefined }} 
-              />
-              <button onClick={() => removeCategory(ci)}>Remove</button>
-            </div>
+          <div key={categoryIndex} style={{ marginBottom: '15px', padding: '5px', border: '1px dashed #ccc' }}>
             {isDuplicate && <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>Category name must be unique.</div>}
 
-          {!cat.minimized && (
+          {!category.minimized && (
             <>
-              <button style={{ marginTop: '10px', marginBottom: '8px' }} onClick={() => updateCategory(ci, { showProps: !cat.showProps })}>
-                {cat.showProps ? 'Hide' : 'Show'} Item Properties
+              <button style={{ marginTop: '10px', marginBottom: '8px' }} onClick={() => updateCategory(categoryIndex, { showProps: !category.showProps })}>
+                {category.showProps ? 'Hide' : 'Show'} Item Properties
               </button>
-              {cat.showProps && (
+              {category.showProps && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '5px' }}>
-                  {ITEM_PROPERTY_OPTIONS.map((prop) => (
+                  <select
+                    value={selectedPropertyToAdd[categoryIndex] || ''}
+                    onChange={(e) => setSelectedPropertyToAdd(prev => ({ ...prev, [categoryIndex]: e.target.value }))}
+                    style={{ padding: '2px', borderRadius: '4px', border: '1px solid #ccc' }}
+                  >
+                    <option value="" disabled>Select Properties to Add</option>
+                    {globalProperties.map((property) => (<option key={property.name} value={property.name}>{property.name}</option>))}
+                  </select>
+                  <button
+                    onClick={() => {
+                      const propertyName = selectedPropertyToAdd[categoryIndex];
+                      if (!propertyName) return;
+                      const keys = getCategoryKeys(category);
+                      if (!keys.includes(propertyName)) {
+                        updateCategory(categoryIndex, { propertyKeys: [...keys, propertyName] });
+                      }
+                    }}
+                  >Add</button>
+                  <button onClick={() => updateCategory(categoryIndex, { propertyKeys: ['name'] })}>Reset to Name Only</button>
+                  {/* {ITEM_PROPERTY_OPTIONS.map((prop) => (
                     <label key={prop} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <input type="checkbox" checked={getCategoryKeys(cat).includes(prop)} disabled={prop === 'name'} onChange={() => toggleCategoryProperty(ci, prop)} />
+                      <input type="checkbox" checked={getCategoryKeys(category).includes(prop)} disabled={prop === 'name'} onChange={() => toggleCategoryProperty(categoryIndex, prop)} />
                       {prop}
                     </label>
-                  ))}
+                  ))} */}
                 </div>
               )}
               <div style={{ marginTop: '10px' }}>
                 <strong>Items</strong>
-                <button onClick={() => addItem(ci)} style={{ marginLeft: '5px' }}>+ Item</button>
-                {cat.items.map((it, ii) => (
+                <button onClick={() => addItem(categoryIndex)} style={{ marginLeft: '5px' }}>+ Item</button>
+                {category.items.map((it, ii) => (
                   <div key={ii} style={{ marginTop: '10px', padding: '10px', border: '1px solid #ddd', background: '#222' }}>
                     <div style={{ marginBottom: '10px', border: '1px solid #444', padding: '10px', borderRadius: '4px' }}>
                       <div style={{ fontSize: '0.7em', color: '#888', marginBottom: '5px' }}>PREVIEW</div>
                       <div style={{ fontWeight: 'bold', fontSize: '1.1em', marginBottom: '4px', borderBottom: '1px solid #333' }}>{it.name}</div>
-                      {it.description && (
-                        <div style={{ fontSize: '0.9em', opacity: 0.8, marginBottom: '8px', fontStyle: 'italic' }}>
-                          {Array.isArray(it.description) ? it.description[0] : it.description}
-                        </div>
-                      )}
-                      {getCategoryKeys(cat).filter(k => !NON_TIERED_PROPS.includes(k) && k !== 'description').map(prop => (
+                      {/* {getCategoryKeys(category).filter(k => !NON_TIERED_PROPS.includes(k) && k !== 'description').map(prop => (
                         <PropertyDisplay key={prop} prop={prop} value={(it as any)[prop]} />
-                      ))}
+                      ))} */}
                     </div>
 
-                    {getCategoryKeys(cat).map((prop) => {
+                    {/* {getCategoryKeys(category).map((prop) => {
                       const type = getPropertyType(prop);
                       return (
                         <div key={prop} style={{ marginBottom: '10px' }}>
@@ -678,7 +730,7 @@ function Refactor() {
                                         const arr = Array.isArray(old) ? [...old] : [old];
                                         while(arr.length <= tIdx) arr.push(getDefaultValue(type));
                                         arr[tIdx] = val;
-                                        setItem(ci, ii, { [prop]: arr });
+                                        setItem(categoryIndex, ii, { [prop]: arr });
                                       }} 
                                       globalTags={globalTags} 
                                       categories={categories} 
@@ -690,13 +742,13 @@ function Refactor() {
                           ) : (
                             <div style={{ display: 'flex', flexDirection: type.includes('Array') || ['requirements', 'affection', 'damageInterface', 'uses'].includes(type) ? 'column' : 'row' }}>
                               <label style={{ minWidth: '140px', fontWeight: 'bold' }}>{prop}:</label>
-                              <PropertyField propKey={prop} value={(it as any)[prop]} onChange={val => setItem(ci, ii, { [prop]: val })} globalTags={globalTags} categories={categories} />
+                              <PropertyField propKey={prop} value={(it as any)[prop]} onChange={val => setItem(categoryIndex, ii, { [prop]: val })} globalTags={globalTags} categories={categories} />
                             </div>
                           )}
                         </div>
                       );
-                    })}
-                    <button onClick={() => removeItem(ci, ii)}>Delete Item</button>
+                    })} */}
+                    <button onClick={() => removeItem(categoryIndex, ii)}>Delete Item</button>
                   </div>
                 ))}
               </div>
