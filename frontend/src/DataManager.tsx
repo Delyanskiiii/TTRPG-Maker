@@ -80,8 +80,9 @@ export interface CharacterSheet {
 export interface GameSystem {
   type: 'system';
   name: string;
-  categories: Category[];
   tags: string[];
+  properties: Property[];
+  categories: Category[];
   sheetStructure: layout;
 }
 
@@ -108,7 +109,7 @@ export class DataManager {
   }
 
   public getMockSystem(): GameSystem {
-    return {type: 'system', name: 'MockSystem', categories: [], tags: [], sheetStructure: {lg: [{"i": "Sample Window","x": 0,"y": 0,"w": 1,"h": 1,"moved": false,"static": false,"isDraggable": true,"isResizable": true}]}};
+    return {type: 'system', name: 'MockSystem', tags: [], properties: [], categories: [], sheetStructure: {lg: [{"i": "Sample Window","x": 0,"y": 0,"w": 1,"h": 1,"moved": false,"static": false,"isDraggable": true,"isResizable": true}]}};
   }
 
   public isLocalhost(): boolean {

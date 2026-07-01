@@ -1,19 +1,40 @@
 {
   "type": "system",
   "name": "MockSystem",
+  "tags": [
+    "dobre"
+  ],
+  "properties": [
+    {
+      "name": "bravo ve lud male kolko sum gotin",
+      "value": "propertySelection"
+    },
+    {
+      "name": "hmmmm",
+      "value": "uses"
+    }
+  ],
   "categories": [
     {
-      "name": "New Category",
+      "name": "Tova mi e purvata kategoriq type shi on god",
       "propertyKeys": [
-        "name",
-        "shoa"
+        "bravo ve lud male kolko sum gotin",
+        "hmmmm"
       ],
-      "items": [],
+      "items": [
+        {
+          "name": "New Item",
+          "maxTier": 1,
+          "properties": {
+            "bravo ve lud male kolko sum gotin": "",
+            "hmmmm": ""
+          }
+        }
+      ],
       "showProps": true,
       "minimized": false
     }
   ],
-  "tags": [],
   "sheetStructure": {
     "lg": [
       {
